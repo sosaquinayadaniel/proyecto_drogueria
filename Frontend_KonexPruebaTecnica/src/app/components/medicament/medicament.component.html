@@ -1,0 +1,114 @@
+<p-toast></p-toast>
+<p-table
+#dt
+[value]="medicaments"
+[rows]="10"
+[paginator]="true"
+[globalFilterFields]="['name', 'laboratorie']"
+[tableStyle]="{ 'min-width': '75rem' }"
+[rowHover]="true"
+dataKey="id"
+currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+[showCurrentPageReport]="true"
+>
+    <ng-template pTemplate="caption">
+        <div class="flex align-items-center justify-content-between">
+            <button pButton pRipple label="New" icon="pi pi-plus" class="p-button-success m-0" (click)="openNew()"></button>
+            <span class="p-input-icon-left">
+                <i class="pi pi-search"></i>
+                <input pInputText type="text" (input)="applyFilterGlobal($event, 'contains')" placeholder="Search..." />
+            </span>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="header">
+        <tr>
+            <th id="name" style="min-width:15rem">Nombre</th>
+            <th id="labortaire"style="min-width:15rem">Laboratorio</th>
+            <th id="dateManufacture"style="min-width:15rem">Fecha de fabricación</th>
+            <th id="dateExpiration"style="min-width:15rem">Fecha de vencimiento</th>
+            <th id="quantityStock"style="min-width:10rem">Cantidad en stock</th>
+            <th id="unitValue"style="min-width:10rem">Valor unitario</th>
+            <th id="buttons"></th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-medicament>
+        <tr>
+            <td>{{ medicament.name }}</td>
+            <td>{{medicament.laboratorie}}</td>
+            <td>{{medicament.dateManufacture}}</td>
+            <td>{{medicament.dateExpiration}}</td>
+            <td>{{medicament.quantityStock}}</td>
+            <td>{{medicament.unitValue | currency: 'USD'}}</td>
+            <td>
+                <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" (click)="onEditMedicament(medicament)"></button>
+                <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-danger mr-2" (click)="deleteMedicament(medicament)"></button>
+                <button pButton pRipple icon="pi pi-tag" class="p-button-rounded p-button-outlined" (click)="openDialogSale(medicament)"></button>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="summary">
+        <div class="flex align-items-center justify-content-between">En total hay {{ medicaments ? medicaments.length : 0 }} Medicamentos.</div>
+    </ng-template>
+</p-table>
+
+<p-dialog [(visible)]="medicamentDialog" [style]="{ width: '500px' }" [header]="medicamentTitle" [modal]="true" styleClass="p-fluid">
+    <ng-template pTemplate="content">
+        <div class="field">
+            <label for="name">Nombre</label>
+            <input type="text" pInputText id="name" [(ngModel)]="medicament.name" require/>
+            <small class="p-error" *ngIf="submitted && !medicament.name">Nombre es requerido.</small>
+        </div>
+        <div class="field">
+            <label for="laboratorie">Laboratorio de fabrica</label>
+            <input type="text" pInputText id="laboratorie" [(ngModel)]="medicament.laboratorie" required />
+            <small class="p-error" *ngIf="submitted && !medicament.laboratorie">Laboratorio es requerido.</small>
+        </div>
+        <div class="field">
+            <label for="dateManufacture">Fecha de fabricación</label>
+            <p-calendar class="mr-2" id="dateManufacture" [(ngModel)]="medicament.dateManufacture" dateFormat="yy-mm-dd" [appendTo]="'body'"></p-calendar>
+            <small class="p-error" *ngIf="submitted && !medicament.dateManufacture">Fecha de fabricación es requerido.</small>
+        </div>
+        <div class="field">
+            <label for="dateExpiration">Fecha de vencimiento</label>
+            <p-calendar id="dateExpiration" class="mr-2" [(ngModel)]="medicament.dateExpiration" dateFormat="yy-mm-dd" [appendTo]="'body'"></p-calendar>
+            <small class="p-error" *ngIf="submitted && !medicament.dateExpiration">Fecha de vencimiento es requerido.</small>
+        </div>
+        <div class="field col">
+            <label for="unitValue"> Valor unitario </label>
+            <p-inputNumber id="unitValue" [(ngModel)]="medicament.unitValue"></p-inputNumber>
+            <small class="p-error" *ngIf="submitted && !medicament.unitValue">Valor unitario es requerido.</small>
+            <small class="p-error" *ngIf="submitted && (medicament?.unitValue! < 0)">El valor unitario no puede ser menor que 1</small>
+        </div>
+        <div class="field col">
+            <label for="quantityStock">Cantidad en stock</label>
+            <p-inputNumber id="quantityStock" [(ngModel)]="medicament.quantityStock"></p-inputNumber>
+            <small class="p-error" *ngIf="submitted && !medicament.quantityStock">Cantidad is requerido.</small>
+            <small class="p-error" *ngIf="submitted && (medicament?.quantityStock! < 0)">La cantida no puede ser menor a 1</small>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+        <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-danger" (click)="hideDialog()"></button>
+        <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-success mr-2" (click)="clickSaveDialog()"></button>
+    </ng-template>
+</p-dialog>
+
+
+<p-dialog [(visible)]="saledialog" [style]="{ width: '500px' }" header="Registro venta" [modal]="true" styleClass="p-fluid">
+    <ng-template pTemplate="content">
+        <div class="field">
+            <label for="name">Cantidad</label>
+            <input type="number" pInputText id="laboratorie" [(ngModel)]="sale.quantity" (input)="TotalValue($event, 'contains')"required />
+            <small class="p-error" *ngIf="submitted && !sale.quantity">La cantidad es requerida</small>
+            <small class="p-error" *ngIf="submitted && (sale.quantity! < 0)">La cantida no puede ser menor a 1</small>
+            <small class="p-error" *ngIf="submitted && (sale.quantity! > medicament?.quantityStock!)">La cantida no puede ser mañor que la cantidad disponible</small>
+        </div>
+        <div class="field">
+            <label for="name">Valor total</label>
+            <p-inputNumber id="quantityStock" [(ngModel)]="sale.totalValue" [readonly]="true"></p-inputNumber>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+        <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-danger" (click)="hideDialog()"></button>
+        <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-success mr-2" (click)="saveSale()"></button>
+    </ng-template>
+</p-dialog>
